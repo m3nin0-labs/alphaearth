@@ -1,0 +1,7 @@
+^_resources$
+^\.github$
+^LICENSE\.md$
+^cran-comments\.md$
+^\.Rproj\.user$
+^.*\.Rproj$
+^README\.Rmd$

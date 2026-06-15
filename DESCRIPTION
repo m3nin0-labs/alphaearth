@@ -1,0 +1,33 @@
+Package: alphaearth
+Title: Search embeddings available in the AlphaEarth Foundations Satellite Embeddings dataset
+Version: 0.1.0
+Authors@R:
+    person("Felipe", "Carlos", email = "efelipecarlos@gmail.com",
+           role = c("aut", "cre"))
+Description: A small, functional toolkit to search the AlphaEarth Foundations
+    annual Satellite Embedding embeddings hosted on Source Cooperative.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli,
+    DBI,
+    duckspatial,
+    fs,
+    glue,
+    purrr,
+    sf,
+    tibble,
+    xml2
+Suggests:
+    curl,
+    sits,
+    terra,
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+URL: https://github.com/m3nin0-labs/alphaearth
+BugReports: https://github.com/m3nin0-labs/alphaearth/issues
+Config/roxygen2/version: 8.0.0
