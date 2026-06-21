@@ -18,8 +18,8 @@ search(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL)
 \value{
 An \code{sf} object (with class \code{alphaearth_tiles}) with one row per
 tile, including \code{fid}, \code{tile}, \code{year}, \code{date}, \code{crs}, \code{utm_zone}, the
-\code{tiff_url}/\code{vrt_url} of the tile, its WGS84 bounds and a \code{geom} (\code{sfc})
-column.
+\code{tiff_url} (plain HTTP) and \code{gdal_url} (streamable \verb{/vsicurl/}) of the tile,
+its WGS84 bounds and a \code{geom} (\code{sfc}) column.
 }
 \description{
 Queries the local index built by \code{\link[=index]{index()}} and returns the matching tiles.

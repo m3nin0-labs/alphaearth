@@ -11,12 +11,8 @@
 # S3 and HTTP hosts
 .AE_S3_HOST      <- "s3://us-west-2.opendata.source.coop/"
 
-# HTTP and VSI hosts
+# HTTP host
 .AE_HTTP_HOST    <- "https://data.source.coop/"
-
-# VSI and VICURL hosts
-.AE_VSIS3_HOST   <- "/vsis3/us-west-2.opendata.source.coop/"
-.AE_VSICURL_HOST <- "/vsicurl/https://data.source.coop/"
 
 #' AlphaEarth index URL
 #' 
@@ -38,6 +34,19 @@
 #' @noRd
 .config_bands <- function() {
   sprintf("A%02d", 0:63)
+}
+
+#' AlphaEarth tile size in metres
+#'
+#' @description Side length of an AlphaEarth COG footprint in its UTM CRS. Each
+#' tile is 8192 pixels at 10 m, i.e. a fixed 81920 m square. Used to derive the
+#' stable `<utm_zone>-<col>-<row>` tile id from the UTM origin.
+#'
+#' @return integer with the tile side length in metres.
+#'
+#' @noRd
+.config_tile_size <- function() {
+  8192L * 10L
 }
 
 #' AlphaEarth source for sits
@@ -134,30 +143,18 @@
   sub(.AE_S3_HOST, .AE_HTTP_HOST, path, fixed = TRUE)
 }
 
-#' AlphaEarth VRT URL from HTTP URL
-#' 
-#' @description convert an HTTP URL to a VRT URL
-#' 
+#' AlphaEarth streamable GDAL URL from HTTP URL
+#'
+#' @description Wrap an HTTP URL in the GDAL `/vsicurl/` handler so the raster
+#' can be read directly over the network (range requests), without downloading.
+#'
 #' @param url character with the HTTP URL
-#' 
-#' @return character with the VRT URL.
+#'
+#' @return character with the `/vsicurl/` GDAL URL.
 #'
 #' @noRd
-.config_vrt_url <- function(url) {
-  sub("\\.tiff?$", ".vrt", url)
-}
-
-#' AlphaEarth VSI URL from VSI path
-#' 
-#' @description convert a VSI path to a VICURL URL
-#' 
-#' @param path character with the VSI path
-#' 
-#' @return character with the VICURL path.
-#'
-#' @noRd
-.config_vsicurl_from_vsis3 <- function(path) {
-  sub(.AE_VSIS3_HOST, .AE_VSICURL_HOST, path, fixed = TRUE)
+.config_vsicurl_url <- function(url) {
+  paste0("/vsicurl/", url)
 }
 
 #' AlphaEarth sits source/collection configuration

@@ -8,10 +8,12 @@
 #' Prepare AlphaEarth tiles as a local sits cube
 #'
 #' @description Turns the result of [search()] into a local data cube usable
-#' by the `sits` package. For each selected tile the corrected.
+#' by the `sits` package. For each selected tile, one single-band VRT per
+#' requested band is written into `output_dir`, reading the embedding COG
+#' directly over the network (no intermediate download).
 #'
 #' @param x An `sf` object returned by [search()], with at least the `tile`,
-#'        `vrt_url` and `date` columns.
+#'        `gdal_url` and `date` columns.
 #' @param output_dir Directory where the cube vrt files are written (created if needed).
 #' @param bands Character vector of embedding bands to write, from `A00` to `A63` (Defaults to all 64 bands).
 #' @param ... Extra arguments passed to `sits::sits_cube()` (e.g.`multicores`, `progress`).
@@ -57,28 +59,25 @@ as_sits.sf <- function(x, output_dir, bands = NULL, ...) {
   # create the output directory
   output_dir <- fs::dir_create(fs::path_abs(output_dir))
 
-  # write the vrt files
+  # write the per-band vrt files (one tile at a time)
   file_info <- list(
     tile = x$tile,
-    vrt_url = x$vrt_url,
+    gdal_url = x$gdal_url,
     date = x$date
   )
 
-  purrr::pwalk(file_info, function(tile, vrt_url, date) {
+  purrr::pwalk(file_info, function(tile, gdal_url, date) {
     # only the bands not yet written need to be regenerated
     missing <- .as_sits_missing_bands(tile, date, bands, output_dir)
 
-    # nothing to do. Just reuse the existing vrt
+    # nothing to do, just reuse the existing band vrts
     if (length(missing) == 0L) {
       return(invisible(NULL))
     }
 
-    # fetch the vrt
-    vrt <- .as_sits_fetch_vrt(vrt_url)
-
-    # write vrt
+    # write one single-band vrt per missing band, reading the COG directly
     .as_sits_write_band_vrts(
-      vrt = vrt,
+      src = gdal_url,
       tile = tile,
       date = date,
       bands = missing,
@@ -133,53 +132,11 @@ as_sits.sf <- function(x, output_dir, bands = NULL, ...) {
   bands
 }
 
-#' Download vrt file.
-#'
-#' @description Download vrt file and rewrite its source to a streamable /vsicurl location.
-#'
-#' @param vrt_url Character vector with the URL of the warped VRT.
-#'
-#' @return Character vector with the corrected VRT as text.
-#'
-#' @noRd
-.as_sits_fetch_vrt <- function(vrt_url) {
-  # download the vrt file
-  doc <- xml2::read_xml(vrt_url)
-
-  # rewrite the source
-  doc <- .as_sits_rewrite_source(doc)
-
-  # return!
-  as.character(doc)
-}
-
-#' Rewrite source dataset to a http streamable location.
-#'
-#' @description Rewrite every <SourceDataset> from /vsis3 to a streamable /vsicurl location.
-#'
-#' @param doc XML document with the VRT.
-#'
-#' @return XML document with the corrected VRT.
-#'
-#' @noRd
-.as_sits_rewrite_source <- function(doc) {
-  # find the source dataset nodes
-  nodes <- xml2::xml_find_all(doc, ".//SourceDataset")
-
-  # rewrite the source dataset nodes (update in-place)
-  purrr::walk(nodes, function(node) {
-    xml2::xml_text(node) <- .config_vsicurl_from_vsis3(xml2::xml_text(node))
-  })
-
-  # return!
-  invisible(doc)
-}
-
 #' Find band VRTs that still need to be written.
 #'
 #' @description Return the subset of `bands` whose single-band VRT file does not
 #' yet exist in `output_dir`. Lets [as_sits()] skip tiles already prepared,
-#' which avoids re-fetching VRTs over the network when iterating or processing
+#' which avoids re-building VRTs over the network when iterating or processing
 #' large areas.
 #'
 #' @param tile An `character` vector with the tile name.
@@ -200,9 +157,10 @@ as_sits.sf <- function(x, output_dir, bands = NULL, ...) {
 
 #' Write band VRT files.
 #'
-#' @description Write one self-contained single-band warped VRT per requested band.
+#' @description Write one single-band VRT per requested band, each reading the
+#' corresponding band of the embedding COG directly over the network.
 #'
-#' @param vrt An `character` vector with the VRT as text.
+#' @param src A `character` with the streamable `/vsicurl/` URL of the COG.
 #' @param tile An `character` vector with the tile name.
 #' @param date An `Date` with the date.
 #' @param bands An `character` vector with the requested bands.
@@ -211,23 +169,20 @@ as_sits.sf <- function(x, output_dir, bands = NULL, ...) {
 #' @return Invisible NULL.
 #'
 #' @noRd
-.as_sits_write_band_vrts <- function(vrt, tile, date, bands, output_dir) {
-  # get all bands
+.as_sits_write_band_vrts <- function(src, tile, date, bands, output_dir) {
+  # get all bands (to map a band name to its source band index)
   all_bands <- .config_bands()
 
   # write the band VRT files
   purrr::walk(bands, function(band) {
-    # get the index of the band
+    # get the index of the band (e.g. A00 -> 1, ..., A63 -> 64)
     idx <- match(band, all_bands)
 
-    # build the band VRT
-    doc <- .as_sits_band_vrt(vrt, idx)
-
-    # write the band VRT file
+    # destination band VRT file
     file <- fs::path(output_dir, .as_sits_filename(tile, band, date))
 
-    # write the band VRT file
-    xml2::write_xml(doc, file)
+    # write the single-band VRT
+    .as_sits_band_vrt(src, idx, file)
   })
 }
 
@@ -247,56 +202,30 @@ as_sits.sf <- function(x, output_dir, bands = NULL, ...) {
   )
 }
 
-#' Mutate VRT to a single band VRT.
+#' Write a single-band VRT for one COG band.
 #'
-#' @description Select a single band from a multi-band VRT and rewrite it as a
-#' single-band VRT object.
+#' @description Select a single band from the embedding COG and write it as a
+#' self-contained VRT. The VRT references the COG over `/vsicurl/`, so the
+#' raster is read directly (no download) and keeps its native georeferencing.
 #'
-#' @param vrt An `character` vector with the VRT as text.
+#' @param src A `character` with the streamable `/vsicurl/` URL of the COG.
 #' @param idx An `integer` with the index of the source band.
+#' @param file A `character` with the destination VRT path.
 #'
-#' @return An `XMLDocument` with the single-band VRT.
+#' @return The destination `file`, invisibly.
 #'
 #' @noRd
-.as_sits_band_vrt <- function(vrt, idx) {
-  # read the VRT
-  doc <- xml2::read_xml(vrt)
-
-  # find the raster bands
-  raster_bands <- xml2::xml_find_all(doc, "/VRTDataset/VRTRasterBand")
-
-  # walk through the raster bands (update in-place)
-  purrr::iwalk(raster_bands, function(node, i) {
-    # remove the band if it's not the source band
-    if (i != idx) {
-      xml2::xml_remove(node)
-    }
-  })
-
-  # get the first band
-  kept_band <- xml2::xml_find_first(doc, "/VRTDataset/VRTRasterBand")
-
-  # set the band number
-  xml2::xml_attr(kept_band, "band") <- "1"
-
-  # find the warp band list
-  mappings <- xml2::xml_find_all(doc, ".//GDALWarpOptions/BandList/BandMapping")
-
-  # walk through the warp band list (update in-place)
-  purrr::walk(mappings, function(node) {
-    # if it is the source band, set the destination band to 1
-    if (xml2::xml_attr(node, "src") == as.character(idx)) {
-      xml2::xml_attr(node, "dst") <- "1"
-    }
-
-    # otherwise, remove the band
-    else {
-      xml2::xml_remove(node)
-    }
-  })
+.as_sits_band_vrt <- function(src, idx, file) {
+  sf::gdal_utils(
+    util        = "translate",
+    source      = src,
+    destination = file,
+    options     = c("-of", "VRT", "-b", as.character(idx)),
+    quiet       = TRUE
+  )
 
   # return!
-  doc
+  invisible(file)
 }
 
 #' Register the AlphaEarth in sits.

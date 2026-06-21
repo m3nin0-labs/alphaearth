@@ -16,8 +16,8 @@
 #'
 #' @return An `sf` object (with class `alphaearth_tiles`) with one row per
 #'   tile, including `fid`, `tile`, `year`, `date`, `crs`, `utm_zone`, the
-#'   `tiff_url`/`vrt_url` of the tile, its WGS84 bounds and a `geom` (`sfc`)
-#'   column.
+#'   `tiff_url` (plain HTTP) and `gdal_url` (streamable `/vsicurl/`) of the tile,
+#'   its WGS84 bounds and a `geom` (`sfc`) column.
 #'
 #' @seealso [index()], [as_sits()]
 #'
@@ -383,7 +383,7 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
 
   # build the sql query
   sql <- glue::glue(
-    "SELECT fid, path, year, utm_zone, crs, ",
+    "SELECT fid, path, year, utm_zone, crs, utm_west, utm_south, ",
     "wgs84_west, wgs84_south, wgs84_east, wgs84_north, ",
     "ST_AsText(geom) AS wkt ",
     "FROM {.config_table()} WHERE {where} ORDER BY year, fid"
@@ -397,26 +397,30 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
 
 #' Spatial tile id.
 #'
-#' @description Derive the spatial tile identity from the UTM zone and the COG's
-#' grid offset. AlphaEarth filenames are `<earth-engine-image-id>-<offsetY>-<offsetX>`,
-#' where the image id changes every year but the UTM zone and (Y, X) offset
-#' describe a fixed ground footprint.
+#' @description Derive the stable spatial tile identity from the UTM zone and the
+#' COG's UTM origin. AlphaEarth COGs are a fixed 81920 m square in their UTM CRS,
+#' so the origin column/row (`utm_west`, `utm_south` divided by the tile size)
+#' identify a ground footprint that is shared across years, even though the
+#' Earth Engine image id in the filename changes every year. The result matches
+#' the `<utm_zone>-<col>-<row>` ids used by the AlphaEarth grid in `sits`.
 #'
-#' @param path character vector with the COG `path` stored in the index.
 #' @param utm_zone character vector with the tile UTM zone (e.g. `"19S"`).
+#' @param utm_west numeric vector with the tile UTM west bound (origin x).
+#' @param utm_south numeric vector with the tile UTM south bound (origin y).
 #'
 #' @return character vector with the tile id.
 #'
 #' @noRd
-.search_tile_id <- function(path, utm_zone) {
-  # get filename
-  base <- fs::path_ext_remove(fs::path_file(path))
+.search_tile_id <- function(utm_zone, utm_west, utm_south) {
+  # tile side length in metres
+  tile_size <- .config_tile_size()
 
-  # get grid offset
-  offset <- sub("^.*?-(\\d+-\\d+)$", "\\1", base)
+  # origin column/row on the fixed UTM grid
+  col <- floor(utm_west / tile_size)
+  row <- floor(utm_south / tile_size)
 
-  # concat utm + offset
-  paste(utm_zone, offset, sep = "-")
+  # concat utm zone + grid column + grid row
+  sprintf("%s-%d-%d", utm_zone, col, row)
 }
 
 #' Build a result `sf` object from raw rows.
@@ -441,19 +445,19 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
     sf::st_sfc(crs = 4326)
   }
 
-  # build the tiff_url column
+  # build the tiff_url column (plain HTTP) and the streamable GDAL url
   tiff_url <- .config_http_from_s3(df$path)
 
   # build the attribute table
   out <- tibble::tibble(
     fid      = as.integer(df$fid),
-    tile     = .search_tile_id(df$path, df$utm_zone),
+    tile     = .search_tile_id(df$utm_zone, df$utm_west, df$utm_south),
     year     = as.integer(df$year),
     date     = as.Date(sprintf("%d-01-01", df$year)),
     crs      = df$crs,
     utm_zone = df$utm_zone,
     tiff_url = tiff_url,
-    vrt_url  = .config_vrt_url(tiff_url),
+    gdal_url = .config_vsicurl_url(tiff_url),
     xmin     = df$wgs84_west,
     ymin     = df$wgs84_south,
     xmax     = df$wgs84_east,

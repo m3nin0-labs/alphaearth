@@ -19,8 +19,7 @@ Imports:
     glue,
     purrr,
     sf,
-    tibble,
-    xml2
+    tibble
 Suggests:
     curl,
     sits,

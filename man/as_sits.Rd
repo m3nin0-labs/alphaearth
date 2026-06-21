@@ -11,7 +11,7 @@ as_sits(x, ...)
 }
 \arguments{
 \item{x}{An \code{sf} object returned by \code{\link[=search]{search()}}, with at least the \code{tile},
-\code{vrt_url} and \code{date} columns.}
+\code{gdal_url} and \code{date} columns.}
 
 \item{...}{Extra arguments passed to \code{sits::sits_cube()} (e.g.\code{multicores}, \code{progress}).}
 
@@ -24,7 +24,9 @@ The \code{sits} cube returned by \code{sits::sits_cube()}.
 }
 \description{
 Turns the result of \code{\link[=search]{search()}} into a local data cube usable
-by the \code{sits} package. For each selected tile the corrected.
+by the \code{sits} package. For each selected tile, one single-band VRT per
+requested band is written into \code{output_dir}, reading the embedding COG
+directly over the network (no intermediate download).
 }
 \examples{
 \dontrun{
