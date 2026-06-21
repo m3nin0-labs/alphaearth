@@ -12,18 +12,16 @@ test_that("path conversions follow the source.coop conventions", {
 
   # check the HTTP path
   expect_equal(http, "https://data.source.coop/tge-labs/aef/v1/annual/2019/1S/abc-0-0.tiff")
-  expect_equal(.config_vrt_url(http), sub("\\.tiff$", ".vrt", http))
 
-  # convert VSI to VICURL
-  vsis3 <- "/vsis3/us-west-2.opendata.source.coop/tge-labs/aef/v1/annual/2019/1S/abc-0-0.tiff"
-  vicurl <- .config_vsicurl_from_vsis3(vsis3)
-
-  # check the VICURL path
-  expect_equal(vicurl, "/vsicurl/https://data.source.coop/tge-labs/aef/v1/annual/2019/1S/abc-0-0.tiff")
+  # wrap the HTTP path in the /vsicurl/ GDAL handler
   expect_equal(
-    .config_vsicurl_from_vsis3(vsis3),
+    .config_vsicurl_url(http),
     "/vsicurl/https://data.source.coop/tge-labs/aef/v1/annual/2019/1S/abc-0-0.tiff"
   )
+})
+
+test_that("the tile size is the fixed 81920 m COG footprint", {
+  expect_equal(.config_tile_size(), 81920L)
 })
 
 test_that("there are 64 bands named A00..A63", {

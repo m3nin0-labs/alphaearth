@@ -65,18 +65,20 @@ test_that("numeric ROI requires the four named corners", {
     .search_roi_bbox(c(-47.9, -15.9, -47.8, -15.8)), "named")
 })
 
-test_that("the tile id is the stable UTM-zone + offset, shared across years", {
-  # two different filenames at the same grid offset / UTM zone (different years)
-  p2020 <- "s3://x/tge-labs/aef/v1/annual/2020/19S/x3pef947d5h16b9ug-0000000000-0000008192.tiff"
-  p2021 <- "s3://x/tge-labs/aef/v1/annual/2021/19S/xxbj5w6n1ior4rmmo-0000000000-0000008192.tiff"
+test_that("the tile id is the stable <zone>-<col>-<row> from the UTM origin", {
+  # the id is the UTM zone plus the origin column/row on the 81920 m grid
+  expect_equal(.search_tile_id("19S", 163840, 8519680), "19S-2-104")
 
-  # resolve to the same stable tile id
-  expect_equal(.search_tile_id(p2020, "19S"), "19S-0000000000-0000008192")
-  expect_equal(.search_tile_id(p2021, "19S"), "19S-0000000000-0000008192")
+  # it depends only on the origin and zone, so it is shared across years
+  expect_equal(.search_tile_id("19S", 163840, 8519680), "19S-2-104")
 
-  # the UTM zone disambiguates equal offsets in different zones
+  # the UTM zone disambiguates equal origins in different zones
+  expect_equal(.search_tile_id("20S", 163840, 8519680), "20S-2-104")
+
+  # off-grid origins floor to the grid cell and the helper vectorises
   expect_equal(
-    .search_tile_id(p2020, "20S"), "20S-0000000000-0000008192"
+    .search_tile_id(c("10N", "23S"), c(254240, 163840), c(5734400, 8028160)),
+    c("10N-3-70", "23S-2-98")
   )
 })
 
@@ -110,6 +112,8 @@ test_that("an empty result is shaped correctly and warns", {
     year = integer(),
     utm_zone = character(),
     crs = character(),
+    utm_west = double(),
+    utm_south = double(),
     wgs84_west = double(),
     wgs84_south = double(),
     wgs84_east = double(),

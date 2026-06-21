@@ -47,6 +47,16 @@
       "EPSG:32722",
       "EPSG:32724"
     ),
+    utm_west = c(
+      0,
+      0,
+      0
+    ),
+    utm_south = c(
+      0,
+      0,
+      0
+    ),
     wgs84_west = c(
       -48,
       -48,
@@ -119,10 +129,10 @@ test_that("index load + search filter tiles spatially, by year and attributes", 
     fid = NULL
   )
 
-  # check the result: the tile id is a "stable" <utm_zone>-<offset>
+  # check the result: the tile id is a "stable" <utm_zone>-<col>-<row>
   expect_equal(res$fid, 1L)
   expect_equal(res$tile, "22S-0-0")
-  expect_match(res$vrt_url, "2020/22S/tileA-0-0\\.vrt$")
+  expect_match(res$gdal_url, "^/vsicurl/https://data\\.source\\.coop/.*2020/22S/tileA-0-0\\.tiff$")
   expect_s3_class(res, "alphaearth_tiles")
 
   # tileA (2020) and tileB (2021) share the footprint, so across both years they
