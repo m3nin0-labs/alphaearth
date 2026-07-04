@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# alphaearth
+# alphaearth <img src="man/figures/logo.png" align="right" height="172" alt="alphaearth hex logo" />
 
 <!-- badges: start -->
 

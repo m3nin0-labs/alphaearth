@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# alphaearth
+# alphaearth <img src="man/figures/logo.png" align="right" height="172" alt="alphaearth hex logo" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/m3nin0-labs/alphaearth/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/m3nin0-labs/alphaearth/actions/workflows/R-CMD-check.yaml)
