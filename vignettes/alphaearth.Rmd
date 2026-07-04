@@ -1,0 +1,105 @@
+---
+title: "Getting started with alphaearth"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with alphaearth}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  # every example needs the network and a one-time ~500 MB index download,
+  # so the code is shown but not evaluated when the vignette is built.
+  eval = FALSE
+)
+```
+
+## Overview
+
+[AlphaEarth Foundations](https://source.coop/tge-labs/aef) publishes annual, global **satellite embeddings**: for 10m pixel, a 64-dimensional vector (bands `A00`-`A63`) that summarises a year of Earth observation. The tiles are distributed as Cloud-Optimized GeoTIFFs (COGs) on [Source Cooperative](https://source.coop/tge-labs/aef).
+
+`alphaearth` is a small, functional toolkit to **find** the tiles you need and **bring them into R** as a data cube, as local GeoTIFFs, or as virtual rasters. The typical workflow is four steps:
+
+```{r setup}
+library(alphaearth)
+```
+
+## 1. Build the local index
+
+`index()` downloads the AlphaEarth spatial index once (~500 MB) and loads it into a persistent local DuckDB database. The download and load happen a single time; later calls reuse the cache unless `overwrite = TRUE`.
+
+```{r index}
+alphaearth::index()
+```
+
+## 2. Search tiles by space and time
+
+`search()` queries the local index and returns the matching tiles as an `sf` object (one row per tile), including the tile id, year, and both a plain HTTP `url` and a streamable `/vsicurl/` url for each COG.
+
+```{r search}
+tiles <- alphaearth::search(
+  roi        = c(
+    xmin = -47.9,
+    ymin = -15.9, 
+    xmax = -47.8, 
+    ymax = -15.8
+  ),
+  start_date = "2020-01-01",
+  end_date   = "2022-01-01"
+)
+
+tiles
+```
+
+### The `roi` argument
+
+`roi` is flexible any of the following is accepted and reprojected to EPSG:4326 automatically:
+
+- an `sf` / `sfc` object,
+- an `sf` bounding box (`bbox`),
+- a named numeric vector `c(xmin, ymin, xmax, ymax)` in EPSG:4326,
+- a `terra` `SpatRaster` / `SpatVector` (its extent is used).
+
+### The date arguments
+
+`start_date` / `end_date` accept either a full year (`"2020"`) or an ISO date (`"2020-01-01"`). You can also select tiles directly by feature id with `fid`.
+
+## 3. Bring the tiles into R
+
+From here, you have three options, each covered in its own article:
+
+- **`as_cube()`** build an analysis-ready data cube for [`sits`](https://e-sensing.github.io/sitsbook/) or [`stars`](https://r-spatial.github.io/stars/). See `vignette("data-cubes")`.
+- **`download()`** materialise the tiles as local GeoTIFFs (optionally cropped). See `vignette("downloading")`.
+- **`as_vrt()`** write lightweight virtual rasters (VRT) that stream from the COGs. Also in `vignette("downloading")`.
+
+```{r tour}
+# a data cube for stars, reading only two bands
+cube <- alphaearth::as_cube(
+  x = tiles, 
+  to = "stars"
+)
+
+# local GeoTIFFs
+files <- alphaearth::download(
+  x = tiles,
+  output_dir = "embeddings",
+  multicores = 4
+)
+
+# virtual rasters (no pixels downloaded)
+vrts <- alphaearth::as_vrt(
+  x = tiles,
+  output_dir = "embeddings"
+)
+```
+
+## Data representation
+
+Embedding values are stored as signed 8-bit integers. The de-quantization `(v / 127.5)^2 * sign(v)` is **not** applied by `alphaearth` in any step the values are returned exactly as stored, so you remain in control of any scaling.
+
+## License & attribution
+
+The `alphaearth` code is MIT licensed. The data is hosted by [Source Cooperative](https://source.coop/tge-labs/aef); the AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind and licensed under CC-BY 4.0.
