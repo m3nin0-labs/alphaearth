@@ -1,0 +1,26 @@
+url: https://m3nin0-labs.github.io/alphaearth
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Indexing & search
+  desc: Build the local tile index and query it.
+  contents:
+  - index
+  - search
+
+- title: Export
+  desc: Turn search results into data cubes, GeoTIFFs or virtual rasters.
+  contents:
+  - as_cube
+  - download
+  - as_vrt
+
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - alphaearth
+  - data-cubes
+  - downloading
