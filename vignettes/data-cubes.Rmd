@@ -1,8 +1,8 @@
 ---
-title: "Data cubes: sits & stars"
+title: "Datacubes: sits & stars"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Data cubes: sits & stars}
+  %\VignetteIndexEntry{Datacubes: sits & stars}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,9 +15,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-## From a search to a data cube
+## From a search to a datacube
 
-`as_cube()` turns the result of `search()` into an analysis-ready data cube for a supported backend, selected with `to`:
+`as_cube()` turns the result of `search()` into an analysis-ready datacube for a supported backend, selected with `to`:
 
 ```{r setup}
 library(alphaearth)
@@ -42,7 +42,7 @@ Both backends share three arguments:
 - `bands`: the embedding bands to expose (`A00`–`A63`; all 64 by default),
 - `roi`: an optional crop applied to every tile (any object `search()` accepts).
 
-## sits cubes (`to = "sits"`)
+## sits cubes
 
 For [`sits`](https://e-sensing.github.io/sitsbook/), one single-band VRT is written per requested band and registered as a local `sits` cube. Extra arguments (e.g. `multicores`, `progress`) are forwarded to `sits::sits_cube()`.
 
@@ -61,7 +61,7 @@ class(cube)
 
 **Note**: In version `2.0`, [`sits`](https://e-sensing.github.io/sitsbook/) provides native access to `alphaearth`. Please, consider using their operation.
 
-## stars objects (`to = "stars"`)
+## stars objects
 
 For [`stars`](https://r-spatial.github.io/stars/), one multi-band VRT is written per tile (the embedding dimensions become the `band` dimension) and read with `stars::read_stars()`. A single tile returns a bare `stars` object; several tiles return a named list keyed by tile id.
 
@@ -107,4 +107,4 @@ small <- alphaearth::as_cube(
 
 - Reach for `as_cube()` when you want to *analyse* the embeddings in the `sits` or `stars` ecosystems without managing files yourself.
 
-- Reach for `download() / `as_vrt()` when you want explicit files on disk. See `vignette("downloading")`.
+- Reach for `download()` / `as_vrt()` when you want explicit files on disk. See `vignette("downloading")`.
