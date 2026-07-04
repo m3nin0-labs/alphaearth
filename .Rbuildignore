@@ -5,3 +5,8 @@
 ^\.Rproj\.user$
 ^.*\.Rproj$
 ^README\.Rmd$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^doc$
+^Meta$
