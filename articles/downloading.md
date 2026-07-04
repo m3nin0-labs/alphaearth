@@ -1,15 +1,23 @@
 # Downloading & virtual rasters
 
-## Two ways to put tiles on disk
+## Two ways to save files
 
 Once you have a search result, `alphaearth` offers two file-based
 exporters that share the same options and return the same manifest:
 
-- [`download()`](https://m3nin0-labs.github.io/alphaearth/reference/download.md)
-  materialises real **GeoTIFFs** (pixels copied locally).
+- [`download()`](https://m3nin0-labs.github.io/alphaearth/reference/download.md),
+  download files to a local directory.
 - [`as_vrt()`](https://m3nin0-labs.github.io/alphaearth/reference/as_vrt.md)
-  writes lightweight **VRT** files that *point at* the remote COGs and
-  stream pixels on demand (no download).
+  writes VRT files that *point at* the remote COGs and stream data on
+  demand (no download).
+
+Both functions accept `bands`, an optional `roi` crop, a `layout`,
+`overwrite`, `progress`, and `multicores`, and both return a `tibble`
+(invisible) with one row per written file and the columns `tile`,
+`year`, `band` and `path`.
+
+The code block below searches a region, and its result is used to
+showcase how each function can be used to save AlphaEarth files:
 
 ``` r
 
@@ -27,20 +35,14 @@ tiles <- alphaearth::search(
 )
 ```
 
-Both functions accept `bands`, an optional `roi` crop, a `layout`,
-`overwrite`, `progress`, and `multicores`, and both return a `tibble`
-(invisible) with one row per written file and the columns `tile`,
-`year`, `band` and `path`.
-
-## Layouts: `stack` vs `bands`
+## Layouts
 
 The `layout` argument controls how the embedding dimensions are
 organised on disk:
 
-- `"stack"` (default), **one multi-band file per tile**, holding every
-  requested band: `ae_<tile>_<year>.tif`.
-- `"bands"`, **one single-band file per embedding dimension**:
-  `ae_<tile>_<band>_<year>.tif`.
+- `"stack"` (default), one multi-band file per tile, holding requested
+  bands.
+- `"bands"`, one single-band file per embedding dimension.
 
 ``` r
 

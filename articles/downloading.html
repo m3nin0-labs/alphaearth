@@ -34,7 +34,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/data-cubes.html">Data cubes: sits &amp; stars</a></li>
+<li><a class="dropdown-item" href="../articles/data-cubes.html">Datacubes: sits &amp; stars</a></li>
     <li><a class="dropdown-item" href="../articles/downloading.html">Downloading &amp; virtual rasters</a></li>
   </ul>
 </li>
@@ -67,20 +67,26 @@
     
     
 <div class="section level2">
-<h2 id="two-ways-to-put-tiles-on-disk">Two ways to put tiles on disk<a class="anchor" aria-label="anchor" href="#two-ways-to-put-tiles-on-disk"></a>
+<h2 id="two-ways-to-save-files">Two ways to save files<a class="anchor" aria-label="anchor" href="#two-ways-to-save-files"></a>
 </h2>
 <p>Once you have a search result, <code>alphaearth</code> offers two
 file-based exporters that share the same options and return the same
 manifest:</p>
 <ul>
 <li>
-<code><a href="../reference/download.html">download()</a></code> materialises real <strong>GeoTIFFs</strong>
-(pixels copied locally).</li>
+<code><a href="../reference/download.html">download()</a></code>, download files to a local directory.</li>
 <li>
-<code><a href="../reference/as_vrt.html">as_vrt()</a></code> writes lightweight <strong>VRT</strong> files
-that <em>point at</em> the remote COGs and stream pixels on demand (no
-download).</li>
+<code><a href="../reference/as_vrt.html">as_vrt()</a></code> writes VRT files that <em>point at</em> the
+remote COGs and stream data on demand (no download).</li>
 </ul>
+<p>Both functions accept <code>bands</code>, an optional
+<code>roi</code> crop, a <code>layout</code>, <code>overwrite</code>,
+<code>progress</code>, and <code>multicores</code>, and both return a
+<code>tibble</code> (invisible) with one row per written file and the
+columns <code>tile</code>, <code>year</code>, <code>band</code> and
+<code>path</code>.</p>
+<p>The code block below searches a region, and its result is used to
+showcase how each function can be used to save AlphaEarth files:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/m3nin0-labs/alphaearth" class="external-link">alphaearth</a></span><span class="op">)</span></span>
 <span></span>
@@ -94,27 +100,19 @@ download).</li>
 <span>  start_date <span class="op">=</span> <span class="fl">2020</span>,</span>
 <span>  end_date   <span class="op">=</span> <span class="fl">2020</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Both functions accept <code>bands</code>, an optional
-<code>roi</code> crop, a <code>layout</code>, <code>overwrite</code>,
-<code>progress</code>, and <code>multicores</code>, and both return a
-<code>tibble</code> (invisible) with one row per written file and the
-columns <code>tile</code>, <code>year</code>, <code>band</code> and
-<code>path</code>.</p>
 </div>
 <div class="section level2">
-<h2 id="layouts-stack-vs-bands">Layouts: <code>stack</code> vs <code>bands</code><a class="anchor" aria-label="anchor" href="#layouts-stack-vs-bands"></a>
+<h2 id="layouts">Layouts<a class="anchor" aria-label="anchor" href="#layouts"></a>
 </h2>
 <p>The <code>layout</code> argument controls how the embedding
 dimensions are organised on disk:</p>
 <ul>
 <li>
-<code>"stack"</code> (default), <strong>one multi-band file per
-tile</strong>, holding every requested band:
-<code>ae_&lt;tile&gt;_&lt;year&gt;.tif</code>.</li>
+<code>"stack"</code> (default), one multi-band file per tile,
+holding requested bands.</li>
 <li>
-<code>"bands"</code>, <strong>one single-band file per embedding
-dimension</strong>:
-<code>ae_&lt;tile&gt;_&lt;band&gt;_&lt;year&gt;.tif</code>.</li>
+<code>"bands"</code>, one single-band file per embedding
+dimension.</li>
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># one multi-band GeoTIFF per tile</span></span>

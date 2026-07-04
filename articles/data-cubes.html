@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Data cubes: sits &amp; stars • alphaearth</title>
+<title>Datacubes: sits &amp; stars • alphaearth</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Data cubes: sits &amp; stars">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Datacubes: sits &amp; stars">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -34,7 +34,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/data-cubes.html">Data cubes: sits &amp; stars</a></li>
+<li><a class="dropdown-item" href="../articles/data-cubes.html">Datacubes: sits &amp; stars</a></li>
     <li><a class="dropdown-item" href="../articles/downloading.html">Downloading &amp; virtual rasters</a></li>
   </ul>
 </li>
@@ -57,7 +57,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Data cubes: sits &amp; stars</h1>
+      <h1>Datacubes: sits &amp; stars</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/m3nin0-labs/alphaearth/blob/main/vignettes/data-cubes.Rmd" class="external-link"><code>vignettes/data-cubes.Rmd</code></a></small>
@@ -67,10 +67,10 @@
     
     
 <div class="section level2">
-<h2 id="from-a-search-to-a-data-cube">From a search to a data cube<a class="anchor" aria-label="anchor" href="#from-a-search-to-a-data-cube"></a>
+<h2 id="from-a-search-to-a-datacube">From a search to a datacube<a class="anchor" aria-label="anchor" href="#from-a-search-to-a-datacube"></a>
 </h2>
 <p><code><a href="../reference/as_cube.html">as_cube()</a></code> turns the result of <code><a href="../reference/search.html">search()</a></code> into
-an analysis-ready data cube for a supported backend, selected with
+an analysis-ready datacube for a supported backend, selected with
 <code>to</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/m3nin0-labs/alphaearth" class="external-link">alphaearth</a></span><span class="op">)</span></span>
@@ -104,7 +104,7 @@ written,</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="sits-cubes-to-sits">sits cubes (<code>to = "sits"</code>)<a class="anchor" aria-label="anchor" href="#sits-cubes-to-sits"></a>
+<h2 id="sits-cubes">sits cubes<a class="anchor" aria-label="anchor" href="#sits-cubes"></a>
 </h2>
 <p>For <a href="https://e-sensing.github.io/sitsbook/" class="external-link"><code>sits</code></a>, one
 single-band VRT is written per requested band and registered as a local
@@ -127,7 +127,7 @@ provides native access to <code>alphaearth</code>. Please, consider
 using their operation.</p>
 </div>
 <div class="section level2">
-<h2 id="stars-objects-to-stars">stars objects (<code>to = "stars"</code>)<a class="anchor" aria-label="anchor" href="#stars-objects-to-stars"></a>
+<h2 id="stars-objects">stars objects<a class="anchor" aria-label="anchor" href="#stars-objects"></a>
 </h2>
 <p>For <a href="https://r-spatial.github.io/stars/" class="external-link"><code>stars</code></a>, one
 multi-band VRT is written per tile (the embedding dimensions become the
@@ -181,8 +181,9 @@ than a full tile:</p>
 <li><p>Reach for <code><a href="../reference/as_cube.html">as_cube()</a></code> when you want to
 <em>analyse</em> the embeddings in the <code>sits</code> or
 <code>stars</code> ecosystems without managing files yourself.</p></li>
-<li><p>Reach for
-<code>download() /</code>as_vrt()<code>when you want explicit files on disk. See</code>vignette(“downloading”)`.</p></li>
+<li><p>Reach for <code><a href="../reference/download.html">download()</a></code> / <code><a href="../reference/as_vrt.html">as_vrt()</a></code> when
+you want explicit files on disk. See
+<code><a href="../articles/downloading.html">vignette("downloading")</a></code>.</p></li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -1,11 +1,11 @@
-# Data cubes: sits & stars
+# Datacubes: sits & stars
 
-## From a search to a data cube
+## From a search to a datacube
 
 [`as_cube()`](https://m3nin0-labs.github.io/alphaearth/reference/as_cube.md)
 turns the result of
 [`search()`](https://m3nin0-labs.github.io/alphaearth/reference/search.md)
-into an analysis-ready data cube for a supported backend, selected with
+into an analysis-ready datacube for a supported backend, selected with
 `to`:
 
 ``` r
@@ -39,7 +39,7 @@ Both backends share three arguments:
   [`search()`](https://m3nin0-labs.github.io/alphaearth/reference/search.md)
   accepts).
 
-## sits cubes (`to = "sits"`)
+## sits cubes
 
 For [`sits`](https://e-sensing.github.io/sitsbook/), one single-band VRT
 is written per requested band and registered as a local `sits` cube.
@@ -64,7 +64,7 @@ class(cube)
 [`sits`](https://e-sensing.github.io/sitsbook/) provides native access
 to `alphaearth`. Please, consider using their operation.
 
-## stars objects (`to = "stars"`)
+## stars objects
 
 For [`stars`](https://r-spatial.github.io/stars/), one multi-band VRT is
 written per tile (the embedding dimensions become the `band` dimension)
@@ -127,4 +127,8 @@ small <- alphaearth::as_cube(
   ecosystems without managing files yourself.
 
 - Reach for
-  `download() /`as_vrt()`when you want explicit files on disk. See`vignette(“downloading”)\`.
+  [`download()`](https://m3nin0-labs.github.io/alphaearth/reference/download.md)
+  /
+  [`as_vrt()`](https://m3nin0-labs.github.io/alphaearth/reference/as_vrt.md)
+  when you want explicit files on disk. See
+  [`vignette("downloading")`](https://m3nin0-labs.github.io/alphaearth/articles/downloading.md).
