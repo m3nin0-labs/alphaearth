@@ -70,16 +70,16 @@
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
 <p><a href="https://source.coop/tge-labs/aef" class="external-link">AlphaEarth Foundations</a>
-publishes annual, global <strong>satellite embeddings</strong>: for 10m
-pixel, a 64-dimensional vector (bands <code>A00</code>-<code>A63</code>)
-that summarises a year of Earth observation. The tiles are distributed
-as Cloud-Optimized GeoTIFFs (COGs) on <a href="https://source.coop/tge-labs/aef" class="external-link">Source Cooperative</a>.</p>
-<p><code>alphaearth</code> is a small, functional toolkit to
+publishes annual, global <strong>satellite embeddings</strong>: for each
+10m pixel, a 64-dimensional vector (bands
+<code>A00</code>-<code>A63</code>) that summarises a year of Earth
+Observation. The tiles are distributed as Cloud-Optimized GeoTIFFs
+(COGs) on <a href="https://source.coop/tge-labs/aef" class="external-link">Source
+Cooperative</a>.</p>
+<p><code>alphaearth</code> is a small, functional R Package to
 <strong>find</strong> the tiles you need and <strong>bring them into
-R</strong> as a data cube, as local GeoTIFFs, or as virtual rasters. The
-typical workflow is four steps:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/m3nin0-labs/alphaearth" class="external-link">alphaearth</a></span><span class="op">)</span></span></code></pre></div>
+R</strong> as a datacube, as local GeoTIFFs, or as VRTs. The typical
+workflow is four steps:</p>
 </div>
 <div class="section level2">
 <h2 id="build-the-local-index">1. Build the local index<a class="anchor" aria-label="anchor" href="#build-the-local-index"></a>
@@ -88,7 +88,7 @@ typical workflow is four steps:</p>
 (~500 MB) and loads it into a persistent local DuckDB database. The
 download and load happen a single time; later calls reuse the cache
 unless <code>overwrite = TRUE</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="../reference/index.html">index</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -98,7 +98,7 @@ unless <code>overwrite = TRUE</code>.</p>
 matching tiles as an <code>sf</code> object (one row per tile),
 including the tile id, year, and both a plain HTTP <code>url</code> and
 a streamable <code>/vsicurl/</code> url for each COG.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tiles</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="../reference/search.html">search</a></span><span class="op">(</span></span>
 <span>  roi        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    xmin <span class="op">=</span> <span class="op">-</span><span class="fl">47.9</span>,</span>
@@ -139,39 +139,55 @@ You can also select tiles directly by feature id with
 </h2>
 <p>From here, you have three options, each covered in its own
 article:</p>
-<ul>
-<li>
-<strong><code><a href="../reference/as_cube.html">as_cube()</a></code></strong> build an analysis-ready data
-cube for <a href="https://e-sensing.github.io/sitsbook/" class="external-link"><code>sits</code></a> or <a href="https://r-spatial.github.io/stars/" class="external-link"><code>stars</code></a>. See
-<code><a href="../articles/data-cubes.html">vignette("data-cubes")</a></code>.</li>
-<li>
-<strong><code><a href="../reference/download.html">download()</a></code></strong> materialise the tiles as
-local GeoTIFFs (optionally cropped). See
-<code><a href="../articles/downloading.html">vignette("downloading")</a></code>.</li>
-<li>
-<strong><code><a href="../reference/as_vrt.html">as_vrt()</a></code></strong> write lightweight virtual
-rasters (VRT) that stream from the COGs. Also in
-<code><a href="../articles/downloading.html">vignette("downloading")</a></code>.</li>
-</ul>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># a data cube for stars, reading only two bands</span></span>
+<div class="section level3">
+<h3 id="datacubes">Datacubes<a class="anchor" aria-label="anchor" href="#datacubes"></a>
+</h3>
+<p><strong><code><a href="../reference/as_cube.html">as_cube()</a></code></strong> build an analysis-ready data
+cube for <a href="https://e-sensing.github.io/sitsbook/" class="external-link"><code>sits</code></a> or <a href="https://r-spatial.github.io/stars/" class="external-link"><code>stars</code></a>.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># sits</span></span>
 <span><span class="va">cube</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="../reference/as_cube.html">as_cube</a></span><span class="op">(</span></span>
-<span>  x <span class="op">=</span> <span class="va">tiles</span>, </span>
+<span>  x  <span class="op">=</span> <span class="va">tiles</span>, </span>
+<span>  to <span class="op">=</span> <span class="st">"sits"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># or stars</span></span>
+<span><span class="va">cube</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="../reference/as_cube.html">as_cube</a></span><span class="op">(</span></span>
+<span>  x  <span class="op">=</span> <span class="va">tiles</span>, </span>
 <span>  to <span class="op">=</span> <span class="st">"stars"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># local GeoTIFFs</span></span>
-<span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="../reference/download.html">download</a></span><span class="op">(</span></span>
-<span>  x <span class="op">=</span> <span class="va">tiles</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="st">"embeddings"</span>,</span>
-<span>  multicores <span class="op">=</span> <span class="fl">4</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># virtual rasters (no pixels downloaded)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For more information, check the
+<code><a href="../articles/data-cubes.html">vignette("data-cubes")</a></code></p>
+</div>
+<div class="section level3">
+<h3 id="vrts">VRTs<a class="anchor" aria-label="anchor" href="#vrts"></a>
+</h3>
+<p><strong><code><a href="../reference/as_vrt.html">as_vrt()</a></code></strong> write lightweight virtual
+rasters (VRT) that stream from the COGs.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># virtual rasters (no pixels downloaded)</span></span>
 <span><span class="va">vrts</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="../reference/as_vrt.html">as_vrt</a></span><span class="op">(</span></span>
 <span>  x <span class="op">=</span> <span class="va">tiles</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"embeddings"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>For more information, check the
+<code><a href="../articles/downloading.html">vignette("downloading")</a></code></p>
+</div>
+<div class="section level3">
+<h3 id="download">Download<a class="anchor" aria-label="anchor" href="#download"></a>
+</h3>
+<p><strong><code><a href="../reference/download.html">download()</a></code></strong> materialise the tiles as
+local GeoTIFFs (optionally cropped).</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># local GeoTIFFs</span></span>
+<span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="../reference/download.html">download</a></span><span class="op">(</span></span>
+<span>  x <span class="op">=</span> <span class="va">tiles</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"embeddings"</span>,</span>
+<span>  multicores <span class="op">=</span> <span class="fl">4</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For more information, check the
+<code><a href="../articles/downloading.html">vignette("downloading")</a></code></p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="data-representation">Data representation<a class="anchor" aria-label="anchor" href="#data-representation"></a>

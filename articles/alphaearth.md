@@ -3,19 +3,14 @@
 ## Overview
 
 [AlphaEarth Foundations](https://source.coop/tge-labs/aef) publishes
-annual, global **satellite embeddings**: for 10m pixel, a 64-dimensional
-vector (bands `A00`-`A63`) that summarises a year of Earth observation.
-The tiles are distributed as Cloud-Optimized GeoTIFFs (COGs) on [Source
-Cooperative](https://source.coop/tge-labs/aef).
+annual, global **satellite embeddings**: for each 10m pixel, a
+64-dimensional vector (bands `A00`-`A63`) that summarises a year of
+Earth Observation. The tiles are distributed as Cloud-Optimized GeoTIFFs
+(COGs) on [Source Cooperative](https://source.coop/tge-labs/aef).
 
-`alphaearth` is a small, functional toolkit to **find** the tiles you
-need and **bring them into R** as a data cube, as local GeoTIFFs, or as
-virtual rasters. The typical workflow is four steps:
-
-``` r
-
-library(alphaearth)
-```
+`alphaearth` is a small, functional R Package to **find** the tiles you
+need and **bring them into R** as a datacube, as local GeoTIFFs, or as
+VRTs. The typical workflow is four steps:
 
 ## 1. Build the local index
 
@@ -72,33 +67,37 @@ with `fid`.
 
 From here, you have three options, each covered in its own article:
 
-- **[`as_cube()`](https://m3nin0-labs.github.io/alphaearth/reference/as_cube.md)**
-  build an analysis-ready data cube for
-  [`sits`](https://e-sensing.github.io/sitsbook/) or
-  [`stars`](https://r-spatial.github.io/stars/). See
-  [`vignette("data-cubes")`](https://m3nin0-labs.github.io/alphaearth/articles/data-cubes.md).
-- **[`download()`](https://m3nin0-labs.github.io/alphaearth/reference/download.md)**
-  materialise the tiles as local GeoTIFFs (optionally cropped). See
-  [`vignette("downloading")`](https://m3nin0-labs.github.io/alphaearth/articles/downloading.md).
-- **[`as_vrt()`](https://m3nin0-labs.github.io/alphaearth/reference/as_vrt.md)**
-  write lightweight virtual rasters (VRT) that stream from the COGs.
-  Also in
-  [`vignette("downloading")`](https://m3nin0-labs.github.io/alphaearth/articles/downloading.md).
+### Datacubes
+
+**[`as_cube()`](https://m3nin0-labs.github.io/alphaearth/reference/as_cube.md)**
+build an analysis-ready data cube for
+[`sits`](https://e-sensing.github.io/sitsbook/) or
+[`stars`](https://r-spatial.github.io/stars/).
 
 ``` r
 
-# a data cube for stars, reading only two bands
+# sits
 cube <- alphaearth::as_cube(
-  x = tiles, 
-  to = "stars"
+  x  = tiles, 
+  to = "sits"
 )
 
-# local GeoTIFFs
-files <- alphaearth::download(
-  x = tiles,
-  output_dir = "embeddings",
-  multicores = 4
+# or stars
+cube <- alphaearth::as_cube(
+  x  = tiles, 
+  to = "stars"
 )
+```
+
+For more information, check the
+[`vignette("data-cubes")`](https://m3nin0-labs.github.io/alphaearth/articles/data-cubes.md)
+
+### VRTs
+
+**[`as_vrt()`](https://m3nin0-labs.github.io/alphaearth/reference/as_vrt.md)**
+write lightweight virtual rasters (VRT) that stream from the COGs.
+
+``` r
 
 # virtual rasters (no pixels downloaded)
 vrts <- alphaearth::as_vrt(
@@ -106,6 +105,27 @@ vrts <- alphaearth::as_vrt(
   output_dir = "embeddings"
 )
 ```
+
+For more information, check the
+[`vignette("downloading")`](https://m3nin0-labs.github.io/alphaearth/articles/downloading.md)
+
+### Download
+
+**[`download()`](https://m3nin0-labs.github.io/alphaearth/reference/download.md)**
+materialise the tiles as local GeoTIFFs (optionally cropped).
+
+``` r
+
+# local GeoTIFFs
+files <- alphaearth::download(
+  x = tiles,
+  output_dir = "embeddings",
+  multicores = 4
+)
+```
+
+For more information, check the
+[`vignette("downloading")`](https://m3nin0-labs.github.io/alphaearth/articles/downloading.md)
 
 ## Data representation
 

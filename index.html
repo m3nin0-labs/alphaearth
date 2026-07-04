@@ -69,46 +69,80 @@
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
+<p>The typical workflow of the <code>alphaearth</code> package is composed of three steps:</p>
+<div class="section level3">
+<h3 id="id_1-build-the-local-index">1. Build the local index<a class="anchor" aria-label="anchor" href="#id_1-build-the-local-index"></a>
+</h3>
+<p><code><a href="reference/index.html">index()</a></code> downloads the AlphaEarth spatial index once (~500 MB) and loads it into a persistent local DuckDB database. The download and load happen a single time. Later calls reuse the cache unless <code>overwrite = TRUE</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># 1. build the local index (downloads `aef_index.gpkg` once, ~500 MB)</span></span>
-<span><span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/index.html">index</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 2. search tiles by space and time.</span></span>
-<span><span class="co">#    `roi` accepts an `sf` object, an `sf` bbox, a named numeric vector in</span></span>
-<span><span class="co">#    EPSG:4326, or a terra object</span></span>
-<span><span class="va">tiles</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/search.html">search</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/index.html">index</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_2-search-tiles-by-space-and-time">2. Search tiles by space and time<a class="anchor" aria-label="anchor" href="#id_2-search-tiles-by-space-and-time"></a>
+</h3>
+<p><code><a href="reference/search.html">search()</a></code> queries the local index and returns the matching tiles as an <code>sf</code> object (one row per tile), including the tile id, year, and both a plain HTTP <code>url</code> and a streamable <code>/vsicurl/</code> url for each COG.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tiles</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/search.html">search</a></span><span class="op">(</span></span>
 <span>  roi        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>    xmin <span class="op">=</span> <span class="op">-</span><span class="fl">47.9</span>,</span>
 <span>    ymin <span class="op">=</span> <span class="op">-</span><span class="fl">15.9</span>, </span>
 <span>    xmax <span class="op">=</span> <span class="op">-</span><span class="fl">47.8</span>, </span>
 <span>    ymax <span class="op">=</span> <span class="op">-</span><span class="fl">15.8</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  start_date <span class="op">=</span> <span class="fl">2020</span>,</span>
-<span>  end_date   <span class="op">=</span> <span class="fl">2022</span></span>
+<span>  start_date <span class="op">=</span> <span class="st">"2020-01-01"</span>,</span>
+<span>  end_date   <span class="op">=</span> <span class="st">"2022-01-01"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3a. results as a data cube. `to` selects the backend:</span></span>
-<span><span class="co">#  "sits" -&gt; a local sits cube; </span></span>
-<span><span class="co">#  "stars" -&gt; stars objects.</span></span>
+<span><span class="va">tiles</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="id_3-bring-the-tiles-into-r">3. Bring the tiles into R<a class="anchor" aria-label="anchor" href="#id_3-bring-the-tiles-into-r"></a>
+</h3>
+<p>From here, you have three options, each covered in its own article:</p>
+<div class="section level4">
+<h4 id="datacubes">Datacubes<a class="anchor" aria-label="anchor" href="#datacubes"></a>
+</h4>
+<p><strong><code><a href="reference/as_cube.html">as_cube()</a></code></strong> build an analysis-ready data cube for <a href="https://e-sensing.github.io/sitsbook/" class="external-link"><code>sits</code></a> or <a href="https://r-spatial.github.io/stars/" class="external-link"><code>stars</code></a>.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># sits</span></span>
 <span><span class="va">cube</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/as_cube.html">as_cube</a></span><span class="op">(</span></span>
-<span>  x          <span class="op">=</span> <span class="va">tiles</span>,</span>
-<span>  to         <span class="op">=</span> <span class="st">"sits"</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  multicores <span class="op">=</span> <span class="fl">4</span></span>
+<span>  x  <span class="op">=</span> <span class="va">tiles</span>, </span>
+<span>  to <span class="op">=</span> <span class="st">"sits"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3b. or download the tiles as local GeoTIFFs</span></span>
-<span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/download.html">download</a></span><span class="op">(</span></span>
-<span>  x          <span class="op">=</span> <span class="va">tiles</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  multicores <span class="op">=</span> <span class="fl">4</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3c. or write virtual rasters (VRT)</span></span>
-<span><span class="va">vrts</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/as_vrt.html">as_vrt</a></span><span class="op">(</span></span>
-<span>  x          <span class="op">=</span> <span class="va">tiles</span>,</span>
-<span>  output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># or stars</span></span>
+<span><span class="va">cube</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/as_cube.html">as_cube</a></span><span class="op">(</span></span>
+<span>  x  <span class="op">=</span> <span class="va">tiles</span>, </span>
+<span>  to <span class="op">=</span> <span class="st">"stars"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>For more information, check the <code><a href="articles/data-cubes.html">vignette("data-cubes")</a></code></p>
+</div>
+<div class="section level4">
+<h4 id="vrts">VRTs<a class="anchor" aria-label="anchor" href="#vrts"></a>
+</h4>
+<p><strong><code><a href="reference/as_vrt.html">as_vrt()</a></code></strong> write lightweight virtual rasters (VRT) that stream from the COGs.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># virtual rasters (no pixels downloaded)</span></span>
+<span><span class="va">vrts</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/as_vrt.html">as_vrt</a></span><span class="op">(</span></span>
+<span>  x <span class="op">=</span> <span class="va">tiles</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"embeddings"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For more information, check the <code><a href="articles/downloading.html">vignette("downloading")</a></code></p>
+</div>
+<div class="section level4">
+<h4 id="download">Download<a class="anchor" aria-label="anchor" href="#download"></a>
+</h4>
+<p><strong><code><a href="reference/download.html">download()</a></code></strong> materialise the tiles as local GeoTIFFs (optionally cropped).</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># local GeoTIFFs</span></span>
+<span><span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">alphaearth</span><span class="fu">::</span><span class="fu"><a href="reference/download.html">download</a></span><span class="op">(</span></span>
+<span>  x <span class="op">=</span> <span class="va">tiles</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"embeddings"</span>,</span>
+<span>  multicores <span class="op">=</span> <span class="fl">4</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>For more information, check the <code><a href="articles/downloading.html">vignette("downloading")</a></code></p>
+</div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a>
@@ -153,7 +187,7 @@
 <p>Full documentation and articles live on the package website:</p>
 <ul>
 <li><a href="https://m3nin0-labs.github.io/alphaearth/articles/alphaearth.html">Getting started</a></li>
-<li><a href="https://m3nin0-labs.github.io/alphaearth/articles/data-cubes.html">Data cubes: sits &amp; stars</a></li>
+<li><a href="https://m3nin0-labs.github.io/alphaearth/articles/data-cubes.html">Datacubes: sits &amp; stars</a></li>
 <li><a href="https://m3nin0-labs.github.io/alphaearth/articles/downloading.html">Downloading &amp; virtual rasters</a></li>
 </ul>
 </div>

@@ -14,14 +14,30 @@ remotes::install_github("m3nin0-labs/alphaearth")
 
 ## Usage
 
+The typical workflow of the `alphaearth` package is composed of three
+steps:
+
+### 1. Build the local index
+
+[`index()`](https://m3nin0-labs.github.io/alphaearth/reference/index.md)
+downloads the AlphaEarth spatial index once (~500 MB) and loads it into
+a persistent local DuckDB database. The download and load happen a
+single time. Later calls reuse the cache unless `overwrite = TRUE`.
+
 ``` r
 
-# 1. build the local index (downloads `aef_index.gpkg` once, ~500 MB)
 alphaearth::index()
+```
 
-# 2. search tiles by space and time.
-#    `roi` accepts an `sf` object, an `sf` bbox, a named numeric vector in
-#    EPSG:4326, or a terra object
+### 2. Search tiles by space and time
+
+[`search()`](https://m3nin0-labs.github.io/alphaearth/reference/search.md)
+queries the local index and returns the matching tiles as an `sf` object
+(one row per tile), including the tile id, year, and both a plain HTTP
+`url` and a streamable `/vsicurl/` url for each COG.
+
+``` r
+
 tiles <- alphaearth::search(
   roi        = c(
     xmin = -47.9,
@@ -29,33 +45,76 @@ tiles <- alphaearth::search(
     xmax = -47.8, 
     ymax = -15.8
   ),
-  start_date = 2020,
-  end_date   = 2022
+  start_date = "2020-01-01",
+  end_date   = "2022-01-01"
 )
 
-# 3a. results as a data cube. `to` selects the backend:
-#  "sits" -> a local sits cube; 
-#  "stars" -> stars objects.
+tiles
+```
+
+### 3. Bring the tiles into R
+
+From here, you have three options, each covered in its own article:
+
+#### Datacubes
+
+**[`as_cube()`](https://m3nin0-labs.github.io/alphaearth/reference/as_cube.md)**
+build an analysis-ready data cube for
+[`sits`](https://e-sensing.github.io/sitsbook/) or
+[`stars`](https://r-spatial.github.io/stars/).
+
+``` r
+
+# sits
 cube <- alphaearth::as_cube(
-  x          = tiles,
-  to         = "sits",
-  output_dir = tempdir(),
-  multicores = 4
+  x  = tiles, 
+  to = "sits"
 )
 
-# 3b. or download the tiles as local GeoTIFFs
-files <- alphaearth::download(
-  x          = tiles,
-  output_dir = tempdir(),
-  multicores = 4
-)
-
-# 3c. or write virtual rasters (VRT)
-vrts <- alphaearth::as_vrt(
-  x          = tiles,
-  output_dir = tempdir()
+# or stars
+cube <- alphaearth::as_cube(
+  x  = tiles, 
+  to = "stars"
 )
 ```
+
+For more information, check the
+[`vignette("data-cubes")`](https://m3nin0-labs.github.io/alphaearth/articles/data-cubes.md)
+
+#### VRTs
+
+**[`as_vrt()`](https://m3nin0-labs.github.io/alphaearth/reference/as_vrt.md)**
+write lightweight virtual rasters (VRT) that stream from the COGs.
+
+``` r
+
+# virtual rasters (no pixels downloaded)
+vrts <- alphaearth::as_vrt(
+  x = tiles,
+  output_dir = "embeddings"
+)
+```
+
+For more information, check the
+[`vignette("downloading")`](https://m3nin0-labs.github.io/alphaearth/articles/downloading.md)
+
+#### Download
+
+**[`download()`](https://m3nin0-labs.github.io/alphaearth/reference/download.md)**
+materialise the tiles as local GeoTIFFs (optionally cropped).
+
+``` r
+
+# local GeoTIFFs
+files <- alphaearth::download(
+  x = tiles,
+  output_dir = "embeddings",
+  multicores = 4
+)
+```
+
+For more information, check the
+[`vignette("downloading")`](https://m3nin0-labs.github.io/alphaearth/articles/downloading.md)
 
 ## Functions
 
@@ -76,7 +135,7 @@ Full documentation and articles live on the package website:
 
 - [Getting
   started](https://m3nin0-labs.github.io/alphaearth/articles/alphaearth.html)
-- [Data cubes: sits &
+- [Datacubes: sits &
   stars](https://m3nin0-labs.github.io/alphaearth/articles/data-cubes.html)
 - [Downloading & virtual
   rasters](https://m3nin0-labs.github.io/alphaearth/articles/downloading.html)
