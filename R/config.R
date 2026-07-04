@@ -158,12 +158,37 @@
 }
 
 #' AlphaEarth sits source/collection configuration
-#' 
+#'
 #' @description path to the bundled sits source/collection configuration
-#' 
+#'
 #' @return character with the path to the configuration file.
 #'
 #' @noRd
 .config_sits_yaml <- function() {
   system.file("extdata", "alphaearth.yml", package = "alphaearth")
+}
+
+#' AlphaEarth GeoTIFF creation options
+#'
+#' @description GDAL creation options used when [download()] materialises the
+#' embedding COGs into local GeoTIFFs.
+#'
+#' @return character vector with the `-co` GDAL creation options.
+#'
+#' @noRd
+.config_gtiff_options <- function() {
+  # tiled and ZSTD-compressed, so the output 
+  # stays compact and fast to read
+  c("-co", "TILED=YES", "-co", "COMPRESS=ZSTD")
+}
+
+#' AlphaEarth download filename prefix
+#'
+#' @description Prefix used for the GeoTIFFs written by [download()].
+#'
+#' @return character with the filename prefix.
+#'
+#' @noRd
+.config_download_prefix <- function() {
+  "ae"
 }

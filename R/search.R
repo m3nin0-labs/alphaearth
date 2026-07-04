@@ -15,11 +15,10 @@
 #' @param fid Integer vector of feature ids to select directly.
 #'
 #' @return An `sf` object (with class `alphaearth_tiles`) with one row per
-#'   tile, including `fid`, `tile`, `year`, `date`, `crs`, `utm_zone`, the
-#'   `tiff_url` (plain HTTP) and `gdal_url` (streamable `/vsicurl/`) of the tile,
-#'   its WGS84 bounds and a `geom` (`sfc`) column.
+#'   tile, including `fid`, `tile`, `year`, the `url` (plain HTTP) and 
+#'   `vsicurl` (streamable `/vsicurl/`), and a `geom` (`sfc`) column.
 #'
-#' @seealso [index()], [as_sits()]
+#' @seealso [index()], [as_cube()]
 #'
 #' @note
 #' The `roi` argument accepts the following types of objects:
@@ -45,6 +44,11 @@
 #' }
 #' @export
 search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
+  # if ROI is defined, normalise it's representation
+  if (!is.null(roi)) {
+    roi <- .search_roi_bbox(roi)
+  }
+
   # open the database
   con <- .search_con()
 
@@ -54,7 +58,7 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
   # build the search predicates
   predicates <- .search_predicates(
     con = con,
-    roi = roi,
+    bbox = roi,
     start_date = start_date,
     end_date = end_date,
     fid = fid
@@ -119,7 +123,7 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
 #' @description Assemble the (non-NULL) SQL predicates based on defined filters properties.
 #'
 #' @param con [DBI::dbConnect()] with the connection to the database.
-#' @param roi object with the spatial region of interest.
+#' @param bbox [sf::st_bbox()] (EPSG:4326) with the roi or `NULL`.
 #' @param start_date character with the start date of the temporal filter.
 #' @param end_date character with the end date of the temporal filter.
 #' @param fid Integer vector of feature ids to select directly.
@@ -127,9 +131,9 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
 #' @return character with the SQL predicates.
 #'
 #' @noRd
-.search_predicates <- function(con, roi, start_date, end_date, fid) {
+.search_predicates <- function(con, bbox, start_date, end_date, fid) {
   purrr::compact(list(
-    .search_roi_sql(con, roi),
+    .search_roi_sql(con, bbox),
     .search_year_sql("year >= %d", start_date),
     .search_year_sql("year <= %d", end_date),
     .search_in_sql(con, "fid", fid, quote = FALSE)
@@ -141,19 +145,19 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
 #' @description Build the SQL predicate for the spatial filter.
 #'
 #' @param con [DBI::dbConnect()] with the connection to the database.
-#' @param roi object with the spatial region of interest.
+#' @param bbox [sf::st_bbox()] (EPSG:4326) with the roi or `NULL`.
 #'
 #' @return character with the SQL predicate.
 #'
 #' @noRd
-.search_roi_sql <- function(con, roi) {
-  # pre-condition: roi can't be NULL
-  if (is.null(roi)) {
+.search_roi_sql <- function(con, bbox) {
+  # if bbox is NULL, return NULL
+  if (is.null(bbox)) {
     return(NULL)
   }
 
-  # build the WKT from the ROI
-  wkt <- sf::st_as_text(sf::st_as_sfc(.search_roi_bbox(roi)))
+  # convert the bbox to WKT
+  wkt <- sf::st_as_text(sf::st_as_sfc(bbox))
 
   # build the SQL predicate
   glue::glue(
@@ -180,27 +184,26 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
 #'
 #' @noRd
 .search_roi_bbox <- function(roi) {
-  bbox <-
-    # case 1: sf bbox
-    if (inherits(roi, "bbox")) {
-      roi
+  # case 1: sf bbox
+  if (inherits(roi, "bbox")) {
+    bbox <- roi
 
-    # case 2: sf object
-    } else if (inherits(roi, c("sf", "sfc"))) {
-      sf::st_bbox(roi)
+  # case 2: sf object
+  } else if (inherits(roi, c("sf", "sfc"))) {
+    bbox <- sf::st_bbox(roi)
 
-    # case 3: terra object
-    } else if (inherits(roi, c("SpatRaster", "SpatVector"))) {
-      .search_terra_bbox(roi)
+  # case 3: terra object
+  } else if (inherits(roi, c("SpatRaster", "SpatVector"))) {
+    bbox <- .search_terra_bbox(roi)
 
-    # case 4: named numeric vector
-    } else if (is.numeric(roi)) {
-      .search_numeric_bbox(roi)
+  # case 4: named numeric vector
+  } else if (is.numeric(roi)) {
+    bbox <- .search_numeric_bbox(roi)
 
-    # case 5: unsupported object
-    } else {
-      cli::cli_abort("Unsupported {.arg roi} of class {.cls {class(roi)}}.")
-    }
+  # case 5: unsupported object
+  } else {
+    cli::cli_abort("Unsupported {.arg roi} of class {.cls {class(roi)}}.")
+  }
 
   # normalize the bbox to EPSG:4326
   .search_to_4326(bbox)
@@ -244,7 +247,7 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
 #' @noRd
 .search_terra_bbox <- function(roi) {
   # check package availability
-  .utils_check_package(
+  .check_package(
     pkg = "terra",
     reason = "needed to use a terra object as {.arg roi}"
   )
@@ -357,10 +360,10 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
   }
 
   # define the values to filter
-  vals <- if (quote) {
-    DBI::dbQuoteString(con, as.character(values))
-  } else {
-    as.character(as.integer(values))
+  vals <- DBI::dbQuoteString(con, as.character(values))
+
+  if (!quote) {
+    vals <- as.character(as.integer(values))
   }
 
   # build the SQL predicate
@@ -439,30 +442,29 @@ search <- function(roi = NULL, start_date = NULL, end_date = NULL, fid = NULL) {
   }
 
   # build the geometry column
-  geom <- if (nrow(df) > 0L) {
-    sf::st_as_sfc(df$wkt, crs = 4326)
-  } else {
-    sf::st_sfc(crs = 4326)
+  geom <- sf::st_sfc(crs = 4326)
+
+  if (nrow(df) > 0L) {
+    geom <- sf::st_as_sfc(df$wkt, crs = 4326)
   }
 
-  # build the tiff_url column (plain HTTP) and the streamable GDAL url
-  tiff_url <- .config_http_from_s3(df$path)
+  # build the url column and the streamable GDAL URL
+  url <- .config_http_from_s3(df$path)
 
   # build the attribute table
   out <- tibble::tibble(
-    fid      = as.integer(df$fid),
-    tile     = .search_tile_id(df$utm_zone, df$utm_west, df$utm_south),
-    year     = as.integer(df$year),
-    date     = as.Date(sprintf("%d-01-01", df$year)),
-    crs      = df$crs,
-    utm_zone = df$utm_zone,
-    tiff_url = tiff_url,
-    gdal_url = .config_vsicurl_url(tiff_url),
-    xmin     = df$wgs84_west,
-    ymin     = df$wgs84_south,
-    xmax     = df$wgs84_east,
-    ymax     = df$wgs84_north,
-    geom     = geom
+    fid = as.integer(df$fid),
+    tile = .search_tile_id(df$utm_zone, df$utm_west, df$utm_south),
+    year = as.integer(df$year),
+    # crs      = df$crs,
+    # utm      = df$utm_zone,
+    url = url,
+    vsicurl = .config_vsicurl_url(url),
+    # xmin     = df$wgs84_west,
+    # ymin     = df$wgs84_south,
+    # xmax     = df$wgs84_east,
+    # ymax     = df$wgs84_north,
+    geom = geom
   )
 
   # promote to an sf object and tag it
