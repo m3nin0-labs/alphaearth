@@ -55,3 +55,6 @@ rsconnect/
 
 # Extras
 _resources
+docs
+/doc/
+/Meta/
