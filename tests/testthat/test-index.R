@@ -29,3 +29,40 @@ test_that("index - reuses the cache without re-downloading", {
   # expect search resolves the fixture tiles
   expect_equal(search(fid = 3L)$tile, "24S-0-0")
 })
+
+test_that("index - a missing content length does not fail the size check", {
+  path <- withr::local_tempfile()
+  writeBin(raw(4L), path)
+
+  local_mocked_bindings(
+    curl_fetch_memory = function(url, handle) {
+      list(
+        headers = charToRaw(
+          "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\n\r\n"
+        )
+      )
+    },
+    .package = "curl"
+  )
+
+  expect_true(.index_check_size(path, "https://example.invalid/aef_index.gpkg"))
+})
+
+test_that("index - a short download fails the size check", {
+  path <- withr::local_tempfile()
+  writeBin(raw(4L), path)
+
+  local_mocked_bindings(
+    curl_fetch_memory = function(url, handle) {
+      list(
+        headers = charToRaw("HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\n")
+      )
+    },
+    .package = "curl"
+  )
+
+  expect_error(
+    .index_check_size(path, "https://example.invalid/aef_index.gpkg"),
+    "not written to the cache"
+  )
+})

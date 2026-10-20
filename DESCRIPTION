@@ -1,6 +1,6 @@
 Package: alphaearth
 Title: Search embeddings available in the AlphaEarth Foundations Satellite Embeddings dataset
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     person("Felipe", "Carlos", email = "efelipecarlos@gmail.com",
            role = c("aut", "cre", "cph"))
@@ -13,6 +13,7 @@ Depends:
     R (>= 4.1.0)
 Imports:
     cli,
+    curl,
     DBI,
     duckspatial,
     fs,
@@ -23,7 +24,6 @@ Imports:
     sf,
     tibble
 Suggests:
-    curl,
     knitr,
     pkgload,
     rmarkdown,

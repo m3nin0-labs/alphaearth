@@ -73,22 +73,63 @@ index <- function(overwrite = FALSE) {
 #'
 #' @noRd
 .index_download <- function(overwrite = FALSE) {
-  # get the index path
   gpkg <- .config_gpkg_path()
 
-  # check if the index already exists and if we should overwrite it
   if (fs::file_exists(gpkg) && !overwrite) {
     return(gpkg)
   }
 
-  # update user
   cli::cli_alert_info("Downloading the AlphaEarth index (this happens once)...")
 
-  # download index file
-  utils::download.file(.config_index_url(), gpkg, mode = "wb", quiet = TRUE)
+  staged <- fs::path_temp("aef_index.gpkg")
+  on.exit(if (fs::file_exists(staged)) fs::file_delete(staged), add = TRUE)
 
-  # return!
+  # download index file (curl has no 60 second cap, unlike download.file())
+  curl::curl_download(.config_index_url(), staged, quiet = TRUE)
+
+  .index_check_size(staged, .config_index_url())
+  fs::file_move(staged, gpkg)
+
   gpkg
+}
+
+#' Check the downloaded index against the size reported by the server.
+#'
+#' @description Check the downloaded index against the size reported by the
+#'   server.
+#'
+#' @param path [fs::path()] with the path to the downloaded file.
+#' @param url `character` with the URL the file was downloaded from.
+#'
+#' @return `TRUE`, invisibly. Errors when the sizes differ.
+#'
+#' @noRd
+.index_check_size <- function(path, url) {
+  handle <- curl::new_handle(nobody = TRUE)
+  headers <- curl::parse_headers_list(
+    rawToChar(curl::curl_fetch_memory(url, handle = handle)$headers)
+  )
+
+  content_length <- headers[["content-length"]]
+  expected <- suppressWarnings(as.numeric(content_length))
+
+  # as.numeric(NULL) has length 0, so test the header before is.na().
+  if (is.null(content_length) || length(expected) != 1L || is.na(expected)) {
+    return(invisible(TRUE))
+  }
+
+  actual <- fs::file_size(path)
+
+  if (actual != expected) {
+    cli::cli_abort(c(
+      "Downloading the AlphaEarth index failed.",
+      "x" = "Downloaded {.val {actual}} bytes, but the server reported
+             {.val {expected}}.",
+      "i" = "Please try again. The index was not written to the cache."
+    ))
+  }
+
+  invisible(TRUE)
 }
 
 #' Open a DuckDB connection
